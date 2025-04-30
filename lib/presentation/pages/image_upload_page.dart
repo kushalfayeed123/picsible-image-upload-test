@@ -1,0 +1,113 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter_image_upload/application/image_upload_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'full_screen_image_page.dart';
+
+class ImageUploadPage extends ConsumerWidget {
+  const ImageUploadPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final images = ref.watch(imageManagerProvider);
+    final controller = ref.read(imageManagerProvider.notifier);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Image Upload"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () => controller.clearImages(),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () => controller.pickFromCamera(),
+                icon: const Icon(Icons.camera_alt),
+                label: const Text("Camera"),
+              ),
+              const SizedBox(width: 16),
+              ElevatedButton.icon(
+                onPressed: () => controller.pickFromGallery(),
+                icon: const Icon(Icons.photo),
+                label: const Text("Gallery"),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: images.isEmpty
+                ? const Center(child: Text("No images uploaded"))
+                : GridView.builder(
+                    padding: const EdgeInsets.all(10),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
+                    ),
+                    itemCount: images.length,
+                    itemBuilder: (context, index) {
+                      final image = images[index];
+                      return Stack(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              // Navigate to the full-screen image view
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => FullScreenImagePage(
+                                    imagePath: image.path,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Hero(
+                              tag: image
+                                  .path, // Matching the tag used in FullScreenImagePage
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  File(image.path),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            right: 4,
+                            top: 4,
+                            child: InkWell(
+                              onTap: () => controller.removeImage(
+                                  image), // Remove image from the grid
+                              child: Container(
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                padding: const EdgeInsets.all(4),
+                                child: const Icon(Icons.close,
+                                    color: Colors.white, size: 16),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}

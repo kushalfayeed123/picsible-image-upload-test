@@ -35,7 +35,8 @@ class ImageUploadPage extends ConsumerWidget {
               ElevatedButton.icon(
                 onPressed: () async {
                   await controller.pickFromCamera();
-                  if (controller.errorMessage != null) {
+                  if (controller.errorMessage != null &&
+                      controller.errorMessage!.isNotEmpty) {
                     _showError(context, controller.errorMessage!);
                   }
                 },
@@ -46,7 +47,8 @@ class ImageUploadPage extends ConsumerWidget {
               ElevatedButton.icon(
                 onPressed: () async {
                   await controller.pickFromGallery();
-                  if (controller.errorMessage != null) {
+                  if (controller.errorMessage != null &&
+                      controller.errorMessage!.isNotEmpty) {
                     _showError(context, controller.errorMessage!);
                   }
                 },

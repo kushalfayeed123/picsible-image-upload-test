@@ -13,13 +13,12 @@ class ImageManagerRepositoryImpl implements ImageManagerRepository {
   Future<Result<String>> pickImageFromCamera() async {
     try {
       final file = await _picker.pickImage(source: ImageSource.camera);
-      if (file != null) {
-        return Result.success(file.path);
-      } else {
-        return Result.error("No image selected");
+      if (file == null) {
+        return Result.error('No image selected');
       }
+      return Result.success(file.path);
     } catch (e) {
-      return Result.error("Error picking image from camera: $e");
+      return Result.error('Error picking image from camera: $e');
     }
   }
 
@@ -27,35 +26,49 @@ class ImageManagerRepositoryImpl implements ImageManagerRepository {
   Future<Result<String>> pickImageFromGallery() async {
     try {
       final file = await _picker.pickImage(source: ImageSource.gallery);
-      if (file != null) {
-        return Result.success(file.path);
-      } else {
-        return Result.error("No image selected");
+      if (file == null) {
+        return Result.error('No image selected');
       }
+      return Result.success(file.path);
     } catch (e) {
-      return Result.error("Error picking image from gallery: $e");
+      return Result.error('Error picking image from gallery: $e');
     }
   }
 
   @override
-  Future<List<ImageModel>> loadSavedImages() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonString = prefs.getString(_storageKey);
-    if (jsonString == null) return [];
-    final List decoded = jsonDecode(jsonString);
-    return decoded.map((e) => ImageModel.fromJson(e)).toList();
+  Future<Result<List<ImageModel>>> loadSavedImages() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = prefs.getString(_storageKey);
+      if (jsonString == null) return Result.success([]);
+      final List decoded = jsonDecode(jsonString);
+      return Result.success(
+          decoded.map((e) => ImageModel.fromJson(e)).toList());
+    } catch (e) {
+      return Result.error('Error loading saved images: $e');
+    }
   }
 
   @override
-  Future<void> saveImages(List<ImageModel> images) async {
-    final prefs = await SharedPreferences.getInstance();
-    final encoded = jsonEncode(images.map((e) => e.toJson()).toList());
-    await prefs.setString(_storageKey, encoded);
+  Future<Result<void>> saveImages(List<ImageModel> images) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final encoded = jsonEncode(images.map((e) => e.toJson()).toList());
+      await prefs.setString(_storageKey, encoded);
+      return Result.success(null);
+    } catch (e) {
+      return Result.error('Error saving images: $e');
+    }
   }
 
   @override
-  Future<void> clearAllImages() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_storageKey);
+  Future<Result<void>> clearAllImages() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_storageKey);
+      return Result.success(null);
+    } catch (e) {
+      return Result.error('Error clearing saved images: $e');
+    }
   }
 }

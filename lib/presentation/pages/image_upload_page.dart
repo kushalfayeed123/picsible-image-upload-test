@@ -1,8 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_image_upload/application/image_upload_provider.dart';
+import 'package:flutter_image_upload/presentation/pages/full_screen_image_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'full_screen_image_page.dart';
+import '../../../application/image_upload_provider.dart';
 
 class ImageUploadPage extends ConsumerWidget {
   const ImageUploadPage({super.key});
@@ -18,7 +19,10 @@ class ImageUploadPage extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.delete),
-            onPressed: () => controller.clearImages(),
+            onPressed: () async {
+              await controller.clearImages();
+              _showError(context, "All images have been cleared.");
+            },
           ),
         ],
       ),
@@ -29,13 +33,23 @@ class ImageUploadPage extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ElevatedButton.icon(
-                onPressed: () => controller.pickFromCamera(),
+                onPressed: () async {
+                  await controller.pickFromCamera();
+                  if (controller.errorMessage != null) {
+                    _showError(context, controller.errorMessage!);
+                  }
+                },
                 icon: const Icon(Icons.camera_alt),
                 label: const Text("Camera"),
               ),
               const SizedBox(width: 16),
               ElevatedButton.icon(
-                onPressed: () => controller.pickFromGallery(),
+                onPressed: () async {
+                  await controller.pickFromGallery();
+                  if (controller.errorMessage != null) {
+                    _showError(context, controller.errorMessage!);
+                  }
+                },
                 icon: const Icon(Icons.photo),
                 label: const Text("Gallery"),
               ),
@@ -56,23 +70,19 @@ class ImageUploadPage extends ConsumerWidget {
                     itemCount: images.length,
                     itemBuilder: (context, index) {
                       final image = images[index];
-                      return Stack(
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              // Navigate to the full-screen image view
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => FullScreenImagePage(
-                                    imagePath: image.path,
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Hero(
-                              tag: image
-                                  .path, // Matching the tag used in FullScreenImagePage
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  FullScreenImagePage(imagePath: image.path),
+                            ),
+                          );
+                        },
+                        child: Stack(
+                          children: [
+                            Hero(
+                              tag: image.path,
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
                                 child: Image.file(
@@ -83,30 +93,39 @@ class ImageUploadPage extends ConsumerWidget {
                                 ),
                               ),
                             ),
-                          ),
-                          Positioned(
-                            right: 4,
-                            top: 4,
-                            child: InkWell(
-                              onTap: () => controller.removeImage(
-                                  image), // Remove image from the grid
-                              child: Container(
-                                decoration: const BoxDecoration(
-                                  color: Colors.black54,
-                                  shape: BoxShape.circle,
+                            Positioned(
+                              right: 4,
+                              top: 4,
+                              child: InkWell(
+                                onTap: () => controller.removeImage(image),
+                                child: Container(
+                                  decoration: const BoxDecoration(
+                                    color: Colors.black54,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  padding: const EdgeInsets.all(4),
+                                  child: const Icon(Icons.close,
+                                      color: Colors.white, size: 16),
                                 ),
-                                padding: const EdgeInsets.all(4),
-                                child: const Icon(Icons.close,
-                                    color: Colors.white, size: 16),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       );
                     },
                   ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showError(BuildContext context, String message) {
+    // Show a snackbar with the error message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
       ),
     );
   }

@@ -10,53 +10,94 @@ final imageManagerProvider =
 
 class ImageManagerNotifier extends StateNotifier<List<ImageModel>> {
   final ImageManagerRepository _repository;
+  String? errorMessage;
 
   ImageManagerNotifier(this._repository) : super([]) {
     _loadImages();
   }
 
   Future<void> _loadImages() async {
-    final saved = await _repository.loadSavedImages();
-    state = saved;
+    try {
+      final saved = await _repository.loadSavedImages();
+      state = saved.value ?? [];
+    } catch (e) {
+      errorMessage = "Error loading images: $e";
+    }
   }
 
   Future<void> pickFromCamera() async {
-    final result = await _repository.pickImageFromCamera();
-    if (result.isSuccess) {
+    try {
+      final result = await _repository.pickImageFromCamera();
+      if (result.isError) {
+        errorMessage = result.error;
+        return;
+      }
+      if (result.value == null) {
+        errorMessage = "No image selected";
+        return;
+      }
+      if (state.any((img) => img.path == result.value)) {
+        errorMessage = "Image already exists";
+        return;
+      }
       _addImage(result.value!);
-    } else {
-      _showError(result.error!);
+      errorMessage = '';
+    } catch (e) {
+      errorMessage = "Error picking image from camera: $e";
     }
   }
 
   Future<void> pickFromGallery() async {
-    final result = await _repository.pickImageFromGallery();
-    if (result.isSuccess) {
+    try {
+      final result = await _repository.pickImageFromGallery();
+      if (result.isError) {
+        errorMessage = result.error;
+        return;
+      }
+      if (result.value == null) {
+        errorMessage = "No image selected";
+        return;
+      }
+      if (state.any((img) => img.path == result.value)) {
+        errorMessage = "Image already exists";
+        return;
+      }
       _addImage(result.value!);
-    } else {
-      _showError(result.error!);
+      errorMessage = '';
+    } catch (e) {
+      errorMessage = "Error picking image from gallery: $e";
     }
   }
 
   void _addImage(String path) {
-    final updated = [...state, ImageModel(path: path)];
-    state = updated;
-    _repository.saveImages(updated);
+    try {
+      final updated = [...state, ImageModel(path: path)];
+      state = updated;
+      _repository.saveImages(updated);
+      errorMessage = '';
+    } catch (e) {
+      errorMessage = "Error adding image: $e";
+    }
   }
 
   void removeImage(ImageModel image) {
-    final updated = state.where((img) => img.path != image.path).toList();
-    state = updated;
-    _repository.saveImages(updated);
+    try {
+      final updated = state.where((img) => img.path != image.path).toList();
+      state = updated;
+      _repository.saveImages(updated);
+      errorMessage = '';
+    } catch (e) {
+      errorMessage = "Error removing image: $e";
+    }
   }
 
   Future<void> clearImages() async {
-    state = [];
-    await _repository.clearAllImages();
-  }
-
-  void _showError(String message) {
-    // Implement your error handling here, such as showing a dialog or snackbar
-    print("Error: $message");
+    try {
+      state = [];
+      await _repository.clearAllImages();
+      errorMessage = '';
+    } on Exception catch (e) {
+      errorMessage = "Error clearing images: $e";
+    }
   }
 }

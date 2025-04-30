@@ -21,7 +21,7 @@ class ImageUploadPage extends ConsumerWidget {
             icon: const Icon(Icons.delete),
             onPressed: () async {
               await controller.clearImages();
-              _showError(context, "All images have been cleared.");
+              _showSnackbar(context, "All images have been cleared.", 'info');
             },
           ),
         ],
@@ -37,7 +37,7 @@ class ImageUploadPage extends ConsumerWidget {
                   await controller.pickFromCamera();
                   if (controller.errorMessage != null &&
                       controller.errorMessage!.isNotEmpty) {
-                    _showError(context, controller.errorMessage!);
+                    _showSnackbar(context, controller.errorMessage!, 'error');
                   }
                 },
                 icon: const Icon(Icons.camera_alt),
@@ -49,7 +49,7 @@ class ImageUploadPage extends ConsumerWidget {
                   await controller.pickFromGallery();
                   if (controller.errorMessage != null &&
                       controller.errorMessage!.isNotEmpty) {
-                    _showError(context, controller.errorMessage!);
+                    _showSnackbar(context, controller.errorMessage!, 'error');
                   }
                 },
                 icon: const Icon(Icons.photo),
@@ -122,12 +122,12 @@ class ImageUploadPage extends ConsumerWidget {
     );
   }
 
-  void _showError(BuildContext context, String message) {
+  void _showSnackbar(BuildContext context, String message, String type) {
     // Show a snackbar with the error message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: type == 'error' ? Colors.red : Colors.blue,
       ),
     );
   }
